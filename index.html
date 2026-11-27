@@ -275,6 +275,13 @@ combatView=function(){if(S.pendingCombatRecap)return combatRecapView();return re
 const recapCampaignBase=campaignView;campaignView=function(){return recapCampaignBase()+combatArchiveView()};
 const recapNotesBase=notesView;notesView=function(){return recapNotesBase()+combatArchiveView()};
 
+const endNoteTemplate=['END OF SESSION — DM SUMMARY','Session highlights:','Party location:','Players’ next intentions:','Clues discovered / player theories:','Unresolved events and quests:','NPC relationships, promises and favors:','Rewards or inventory changes to verify:','What went well:','What needs improvement:','Preparation for next session:'].join('\n\n');
+function chooseNoteKind(k){let n=$('note');if(!n)return;if(k==='End of session'){if(!n.value.trim()||confirm('Replace current draft with the end-of-session template?'))n.value=endNoteTemplate}else if(n.value===endNoteTemplate)n.value=''}
+const endNoteFormBase=noteForm;
+noteForm=function(){return endNoteFormBase().replace('<select id="kind">','<select id="kind" onchange="chooseNoteKind(this.value)">').replace('</select>','<option>End of session</option></select>').replace('<textarea id="note"','<textarea rows="12" id="note"')};
+const endNoteViewBase=notesView;
+notesView=function(){return endNoteViewBase().replace(/<summary>End of session · Scene \d+<\/summary><p>/g,'<summary>End of session — DM summary</summary><p style="white-space:pre-wrap">')};
+
 save();
 render();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
