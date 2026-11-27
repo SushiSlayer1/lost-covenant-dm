@@ -228,6 +228,16 @@ fcard=function(f,i){let h=concentrationCardBase(f,i);if(!f.pc)return h;return h.
 const concentrationSync=sync;sync=function(){concentrationSync();for(let f of S.fighters.filter(f=>f.pc)){let p=S.party.find(p=>p.id===f.id);if(p)p.concentration=f.concentration||''}};
 const concentrationPartyBase=partyPlus;partyPlus=function(){let h=concentrationPartyBase();return h.replace(/<article data-party="(\d+)">/g,(a,i)=>a).replace(/(<label data-field="(\d+)-conditions">[\s\S]*?<\/label>)/g,(a,b,i)=>b+sheetText(Number(i),'concentration','Concentration (spell name)'))};
 
+for(let r of [
+['Death Saving Throws','At the start of your turn at 0 HP while unstable, roll d20. 10–19: one success; 2–9: one failure; natural 1: two failures; natural 20: regain 1 HP. Three successes stabilize; three failures mean death. Reset both counters when stable or when regaining HP. Damage at 0 HP causes one failure, or two on a critical hit. Damage at 0 HP equal to or exceeding maximum HP causes instant death.'],
+['Stabilization','A stable creature at 0 HP remains unconscious but stops making Death Saving Throws. It regains 1 HP after 1d4 hours without healing. Damage ends stability. Use the Help action and succeed on a DC 10 Wisdom (Medicine) check, or expend a Healer’s Kit use with the Utilize action, to stabilize a creature.'],
+['Death','Three failed Death Saving Throws mean death. Ordinary healing cannot restore a dead creature. Resurrection magic may revive it if its requirements are met. Instant death also occurs when damage reduces HP to 0 and remaining damage equals or exceeds maximum HP.'],
+['Unconscious','Incapacitated, prone, unaware of surroundings, cannot move or speak, drops held objects, automatically fails Strength and Dexterity saves. Attacks against it have advantage; hits from within 5 feet are critical hits. Healing above 0 HP ends unconsciousness caused by dropping to 0 HP.'],
+['Healer’s Kit','A kit has ten uses. Use the Utilize action to expend one use and stabilize a creature at 0 HP without a Medicine check.']
+]){let i=ruleData.findIndex(x=>x[0].toLowerCase()===r[0].toLowerCase());if(i>=0)ruleData[i]=r;else ruleData.push(r);if(!terms.includes(r[0]))terms.push(r[0])}
+terms.sort((a,b)=>b.length-a.length);
+document.head.insertAdjacentHTML('beforeend','<style>button, input, select, textarea, summary, a, label, [role="button"]{touch-action:manipulation}html{touch-action:manipulation}</style>');
+
 save();
 render();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
