@@ -155,6 +155,9 @@ sessionView=function(){let sc=S.scenes[S.scene],html=structuredBase();if(!sc?.se
 const finalStructuredBase=sessionView;
 sessionView=function(){let sc=S.scenes[S.scene],html=finalStructuredBase();if(!sc?.sections?.length)return '<div class="tag">Layout revision 4 · No structured sections loaded</div>'+html;let b=html.indexOf('<div class="row"><button onclick="goScene(-1)">');let a=html.indexOf('<h3 style="margin-top:16px">Run the scene</h3>');if(a<0){let m=html.match(/<section class="prep-section(?: [^"]*)?">/);a=m?m.index:-1}if(a>=0&&b>a)html=html.slice(0,a)+structuredSections(sc)+html.slice(b);else html=structuredSections(sc)+html;return '<div class="tag">Layout revision 4 · '+sc.sections.length+' structured sections</div>'+html.replace(/<div class="tag">Layout revision [23][^<]*<\/div>/g,'')};
 
+const sessionControlsBase=sessionView;
+sessionView=function(){let sc=S.scenes[S.scene],html=sessionControlsBase();let controls='<div class="row" style="margin:12px 0;align-items:center"><strong>Scene status: '+esc(sc.status||'Prepared')+'</strong><button class="primary" onclick="markScene(\'Experienced\')">✓ Mark experienced</button><button onclick="markScene(\'Skipped\')">Skip scene</button></div>';return html.replace('<h3>What actually happened?</h3>','<h3>What actually happened?</h3>'+controls).replace('<button onclick="markScene(\'Skipped\')">Skip this scene</button>','').replace('<button onclick="markScene(\'Experienced\')">Mark experienced</button>','')};
+
 save();
 render();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
