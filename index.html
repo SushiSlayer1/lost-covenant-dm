@@ -124,6 +124,26 @@ const undoBase=undo,redoBase=redo;undo=function(){if(!history.length)return;let 
 async function importSessionV08(file){if(!file)return;try{let d=JSON.parse(await file.text());if(d.kind!=='lost-covenant-session-v08'||d.scenes?.length!==22)throw Error('Invalid Session 1 v08 file');if(practice)throw Error('Exit practice before importing');if(S.started)throw Error('End active combat before importing');if(!confirm('Replace session preparation with v08? Party, campaign and actual notes remain unchanged.'))return;change(()=>{S.previousScenePrep=clone(S.scenes);S.scenes=clone(d.scenes);S.scene=0;S.sessionPrepVersion='v08';prepState()});if(checkpoint){checkpoint.scenes=clone(S.scenes);checkpoint.scene=0;checkpoint.sessionPrepVersion='v08'}if(previous){previous.scenes=clone(S.scenes);previous.scene=0;previous.sessionPrepVersion='v08'}save();render()}catch(e){alert(e.message)}}
 const sessionBeforeV08=sessionView;sessionView=function(){return '<article><h3>Session preparation · '+esc(S.sessionPrepVersion||'older version')+'</h3><label>Import private Session 1 v08 JSON<input type="file" accept=".json" onchange="importSessionV08(this.files[0])"></label></article>'+sessionBeforeV08().replace('<p>'+esc(S.scenes[S.scene].dm)+'</p>','<p style="white-space:pre-wrap">'+esc(S.scenes[S.scene].dm)+'</p>')};
 
+function formatPlaybook(raw){
+ let lines=String(raw||'').replace(/\r/g,'').split('\n'), sections=[], cur={head:'DM guidance',body:[]};
+ function flush(){if(cur.body.length)sections.push(cur)}
+ for(let l of lines){l=l.trim();if(!l||/^\/ continued$/.test(l)||/\/ continued$/.test(l)||/^CONTENTS Arrival/.test(l))continue;
+ if(/^(?:[A-F] [·•]|ROUND \d|SCENE [IVX]+|[A-Z][A-Z 0-9&/•·’'×—-]{2,}(?:\s*[:·•].*)?$)/.test(l)&&!/^→/.test(l)){flush();cur={head:l,body:[]}}else cur.body.push(l)}
+ flush();
+ return sections.filter(x=>x.head!=='READ ALOUD').map(x=>{
+ let h=x.head,b=x.body.join(' '), links=x.body.filter(l=>/^→/.test(l));
+ if(links.length)return '<section class="prep-section"><h3>Continue to</h3><div class="row">'+links.map(l=>{let m=l.match(/Scene (\d+)/);return m?'<button onclick="jumpPrep('+ (Number(m[1])-1)+')">'+esc(l.replace(/^→\s*/,'').replace(/\s*\|\s*Scene \d+/,''))+'</button>':''}).join('')+'</div></section>';
+ if(h==='MERCHANDISE')return '<section class="prep-section"><h3>Merchandise · DM only</h3><div style="overflow:auto"><table class="prep-table"><thead><tr><th>Item</th><th>Price</th><th>DM truth</th></tr></thead><tbody>'+x.body.map(l=>'<tr>'+l.split(' — ').map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div></section>';
+ let dc=h.match(/DC \d+/), secret=/SECRET|TRUTH|OPTIONAL CLUE|WHISPER|IMPORTANT/.test(h), check=!!dc||/^(?:[A-F] [·•]|ROUND \d)/.test(h);
+ let body=esc(b).replace(/(Success:|Failure:|Win:|Lose:)/g,(v)=>'<span class="prep-result '+(/Success|Win/.test(v)?'prep-good':'prep-bad')+'">'+v+'</span>');
+ return '<section class="prep-section '+(secret?'prep-secret':check?'prep-check':'')+'"><h3>'+esc(h)+(dc?' <span class="prep-dc">'+esc(dc[0])+'</span>':'')+'</h3><div>'+body+'</div></section>'
+ }).join('');
+}
+function jumpPrep(i){if(i>=0&&i<S.scenes.length){change(()=>S.scene=i);window.scrollTo(0,0)}}
+const formattedSessionBase=sessionView;
+sessionView=function(){let sc=S.scenes[S.scene];let html=formattedSessionBase();if(!sc||!sc.sid?.startsWith('v08-'))return html;let old='<p style="white-space:pre-wrap">'+esc(sc.dm)+'</p>', plain='<p>'+esc(sc.dm)+'</p>';let structured=formatPlaybook(sc.dm);html=html.includes(old)?html.replace(old,structured):html.replace(plain,structured);return html.replace(/<details open><summary>Checks & mechanics<\/summary>See complete playbook above\.<\/details>/,'').replace(/<details><summary>DM secrets \/ clues<\/summary>DM-only playbook above\.<\/details>/,'').replace(/<details><summary>Transition<\/summary>Use the relevant destination in the roadmap; do not force unused branches\.<\/details>/,'')};
+document.head.insertAdjacentHTML('beforeend','<style>.prep-section{margin:12px 0;padding:14px;border:1px solid var(--line);border-radius:10px;line-height:1.55}.prep-section h3{margin:0 0 8px}.prep-check{border-left:3px solid #e8c48a}.prep-secret{border-left:3px solid #a58ad1}.prep-dc{display:inline-block;padding:2px 8px;border-radius:6px;background:#e8c48a;color:#172126;font-size:14px}.prep-result{display:block;font-weight:bold;margin-top:8px}.prep-good{color:#77b99a}.prep-bad{color:#ffaaa2}.prep-table{width:100%;border-collapse:collapse}.prep-table td,.prep-table th{padding:8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}</style>');
+
 save();
 render();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
