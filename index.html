@@ -238,6 +238,14 @@ for(let r of [
 terms.sort((a,b)=>b.length-a.length);
 document.head.insertAdjacentHTML('beforeend','<style>button, input, select, textarea, summary, a, label, [role="button"]{touch-action:manipulation}html{touch-action:manipulation}</style>');
 
+const reminderCombatBase=combatView;
+function thiefSceneIndex(){return S.scenes.findIndex(x=>/secret perception|perception.*thief|thief.*perception/i.test(x.title||''))}
+function raidReminderEligible(){return S.started&&S.round>=2&&S.fighters.some(f=>!f.pc&&/raider|rusk blackthorn|varek ironjaw/i.test(f.name))}
+function reminderKey(){return 'raid-thief-'+S.session}
+function dismissRaidReminder(){change(()=>{S.handledReminders??={};S.handledReminders[reminderKey()]=true})}
+function openThiefReminder(){let i=thiefSceneIndex();if(i<0)i=S.scenes.findIndex(x=>/perception/i.test(x.title||''));if(i<0)return alert('Perception scene not found in imported preparation.');change(()=>S.scene=i);setTab('Session')}
+combatView=function(){let h=reminderCombatBase();if(!raidReminderEligible()||S.handledReminders?.[reminderKey()])return h;return '<article style="border:2px solid #d7b76b;background:#d7b76b12"><div class="tag">DM ONLY · ROUND 2+</div><h3>Secret event: Perception check</h3><p>At a suitable moment, ask every player to roll Perception without explaining why. Compare totals; privately inform the highest roller (ties may both notice if plausible). Check the scene for the exact narration and possible responses.</p><div class="row"><button onclick="openThiefReminder()">Open secret scene</button><button onclick="dismissRaidReminder()">Mark handled / dismiss</button></div></article>'+h};
+
 save();
 render();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.error);
